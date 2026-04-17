@@ -1,78 +1,83 @@
-"""CLI entry point for envchain."""
+"""Main CLI entry point for envchain."""
 
-import getpass
-import sys
-from pathlib import Path
-
+import os
 import click
-
-from envchain.store import (
-    set_variable,
-    get_variable,
-    delete_variable,
-    list_keys,
-    DEFAULT_STORE_FILE,
-)
+from envchain.store import set_variable, get_variable, delete_variable, list_keys
+from envchain.cli_export import register_export_commands
+from envchain.cli_rotate import register_rotate_commands
+from envchain.cli_audit import register_audit_commands
+from envchain.audit import log_event
 
 
-def _get_store(ctx: click.Context) -> Path:
-    return Path(ctx.obj.get("store", DEFAULT_STORE_FILE))
+def _get_store(ctx):
+    store_path = os.environ.get("ENVCHAIN_STORE", ".envchain.json")
+    passphrase = os.environ.get("ENVCHAIN_PASSPHRASE", "")
+    store_dir = os.path.dirname(os.path.abspath(store_path))
+    ctx.ensure_object(dict)
+    ctx.obj["store_path"] = store_path
+    ctx.obj["passphrase"] = passphrase
+    ctx.obj["store_dir"] = store_dir
 
 
 @click.group()
-@click.option("--store", default=DEFAULT_STORE_FILE, show_default=True, help="Path to the store file.")
 @click.pass_context
-def cli(ctx: click.Context, store: str) -> None:
-    """envchain — encrypted project-level environment variable manager."""
-    ctx.ensure_object(dict)
-    ctx.obj["store"] = store
+def cli(ctx):
+    """envchain — encrypted project environment variable manager."""
+    _get_store(ctx)
 
 
 @cli.command("set")
 @click.argument("key")
-@click.argument("value", required=False)
+@click.argument("value")
 @click.pass_context
-def cmd_set(ctx: click.Context, key: str, value: str) -> None:
-    """Set (encrypt and store) an environment variable."""
-    if value is None:
-        value = click.prompt(f"Value for {key}", hide_input=True)
-    passphrase = getpass.getpass("Passphrase: ")
-    set_variable(key, value, passphrase, _get_store(ctx))
-    click.echo(f"✔ '{key}' stored.")
+def cmd_set(ctx, key, value):
+    """Set an encrypted environment variable."""
+    store_path = ctx.obj["store_path"]
+    passphrase = ctx.obj["passphrase"]
+    store_dir = ctx.obj["store_dir"]
+    set_variable(store_path, passphrase, key, value)
+    log_event(store_dir, "set", key)
+    click.echo(f"Set {key}")
 
 
 @cli.command("get")
 @click.argument("key")
 @click.pass_context
-def cmd_get(ctx: click.Context, key: str) -> None:
-    """Decrypt and print an environment variable."""
-    passphrase = getpass.getpass("Passphrase: ")
-    try:
-        click.echo(get_variable(key, passphrase, _get_store(ctx)))
-    except KeyError as exc:
-        click.echo(str(exc), err=True)
-        sys.exit(1)
+def cmd_get(ctx, key):
+    """Get a decrypted environment variable."""
+    store_path = ctx.obj["store_path"]
+    passphrase = ctx.obj["passphrase"]
+    store_dir = ctx.obj["store_dir"]
+    value = get_variable(store_path, passphrase, key)
+    log_event(store_dir, "get", key)
+    click.echo(value)
 
 
 @cli.command("delete")
 @click.argument("key")
 @click.pass_context
-def cmd_delete(ctx: click.Context, key: str) -> None:
-    """Remove a variable from the store."""
-    try:
-        delete_variable(key, _get_store(ctx))
-        click.echo(f"✔ '{key}' deleted.")
-    except KeyError as exc:
-        click.echo(str(exc), err=True)
-        sys.exit(1)
+def cmd_delete(ctx, key):
+    """Delete an environment variable."""
+    store_path = ctx.obj["store_path"]
+    passphrase = ctx.obj["passphrase"]
+    store_dir = ctx.obj["store_dir"]
+    delete_variable(store_path, key)
+    log_event(store_dir, "delete", key)
+    click.echo(f"Deleted {key}")
 
 
 @cli.command("list")
 @click.pass_context
-def cmd_list(ctx: click.Context) -> None:
-    """List all stored variable names."""
-    keys = list_keys(_get_store(ctx))
+def cmd_list(ctx):
+    """List all variable keys."""
+    store_path = ctx.obj["store_path"]
+    keys = list_keys(store_path)
     if not keys:
-        click.echo("No variables stored.")
-    else:
-        click.echo("\n".join(keys))
+        click.echo("No variables set.")
+    for k in keys:
+        click.echo(k)
+
+
+register_export_commands(cli)
+register_rotate_commands(cli)
+register_audit_commands(cli)
