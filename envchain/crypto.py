@@ -4,6 +4,7 @@ import os
 import base64
 import hashlib
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.exceptions import InvalidTag
 
 
 SALT_SIZE = 16
@@ -34,12 +35,23 @@ def encrypt(plaintext: str, passphrase: str) -> str:
 
 
 def decrypt(encoded: str, passphrase: str) -> str:
-    """Decrypt a base64-encoded blob with a passphrase. Returns plaintext."""
+    """Decrypt a base64-encoded blob with a passphrase. Returns plaintext.
+
+    Raises:
+        ValueError: If the blob is too short to contain salt and nonce, or if
+            the passphrase is incorrect / data is corrupted.
+    """
     blob = base64.b64decode(encoded.encode("utf-8"))
+    min_size = SALT_SIZE + NONCE_SIZE
+    if len(blob) <= min_size:
+        raise ValueError("Encrypted data is too short or corrupted.")
     salt = blob[:SALT_SIZE]
     nonce = blob[SALT_SIZE:SALT_SIZE + NONCE_SIZE]
     ciphertext = blob[SALT_SIZE + NONCE_SIZE:]
     key = derive_key(passphrase, salt)
     aesgcm = AESGCM(key)
-    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+    try:
+        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+    except InvalidTag:
+        raise ValueError("Decryption failed: incorrect passphrase or corrupted data.")
     return plaintext.decode("utf-8")
