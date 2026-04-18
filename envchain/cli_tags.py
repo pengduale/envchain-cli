@@ -15,7 +15,10 @@ def register_tag_commands(cli, get_store):
     def cmd_tag_add(ctx, key, tag):
         """Add TAG to variable KEY."""
         store_path = get_store(ctx)
-        tag_variable(store_path, key, tag)
+        try:
+            tag_variable(store_path, key, tag)
+        except KeyError:
+            raise click.ClickException(f"Variable '{key}' not found in store.")
         click.echo(f"Tagged '{key}' with '{tag}'.")
 
     @cmd_tag.command("remove")
@@ -25,7 +28,10 @@ def register_tag_commands(cli, get_store):
     def cmd_tag_remove(ctx, key, tag):
         """Remove TAG from variable KEY."""
         store_path = get_store(ctx)
-        untag_variable(store_path, key, tag)
+        try:
+            untag_variable(store_path, key, tag)
+        except KeyError as e:
+            raise click.ClickException(str(e))
         click.echo(f"Removed tag '{tag}' from '{key}'.")
 
     @cmd_tag.command("list")
