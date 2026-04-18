@@ -48,3 +48,25 @@ def search_all_profiles(pattern: str, passphrase: str, store_path: str) -> dict[
             results[profile] = hits
 
     return results
+
+
+def search_keys_only(pattern: str, passphrase: str, store_path: str) -> dict[str, List[str]]:
+    """Search for matching keys across all profiles and the default store, without decrypting values.
+
+    Returns a dict mapping profile name (or 'default') to matched key names.
+    This is faster than search_all_profiles when values are not needed.
+    """
+    results: dict[str, List[str]] = {}
+
+    default_keys = [k for k in list_keys(store_path, passphrase) if fnmatch.fnmatch(k, pattern)]
+    if default_keys:
+        results["default"] = default_keys
+
+    for profile in list_profiles(store_path):
+        if profile == "default":
+            continue
+        matched = [k for k in list_profile_keys(store_path, profile, passphrase) if fnmatch.fnmatch(k, pattern)]
+        if matched:
+            results[profile] = matched
+
+    return results
