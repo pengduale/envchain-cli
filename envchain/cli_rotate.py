@@ -40,7 +40,9 @@ def cmd_rotate_one(variable: str, store_path: str, old_passphrase: str, new_pass
     try:
         rotate_single(path, variable, old_passphrase, new_passphrase)
         click.echo(f"Variable '{variable}' rotated successfully.")
-    except KeyError as exc:
+    except KeyError:
+        raise click.ClickException(f"Variable '{variable}' not found in store.") from None
+    except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
     except Exception as exc:
         raise click.ClickException(f"Rotation failed: {exc}") from exc
