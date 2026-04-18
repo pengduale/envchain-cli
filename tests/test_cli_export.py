@@ -80,3 +80,9 @@ def test_import_overwrites_with_flag(runner, store_path, tmp_path):
     invoke(runner, store_path, "import", "--overwrite", str(env_file))
     get_result = invoke(runner, store_path, "get", "EXIST")
     assert "updated" in get_result.output
+
+
+def test_import_nonexistent_file(runner, store_path):
+    """Importing a file that does not exist should fail with a non-zero exit code."""
+    result = invoke(runner, store_path, "import", "/nonexistent/path/import.env")
+    assert result.exit_code != 0
