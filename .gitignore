@@ -1,20 +1,25 @@
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-
-.idea/
-env/
-dist/
 *.egg-info/
+dist/
+build/
 .venv/
-htmlcov/
-*.egg
-.eggs/
-develop-eggs/
-.tox/
-.mypy_cache/
-.Python
-*.log
 venv/
+
+# Envchain session (never commit cached passphrases)
+.envchain_session
+
+# Env files
+.env
+*.env
+
+# Pytest
+.pytest_cache/
 .coverage
+htmlcov/
+
+# Editor
+.vscode/
+.idea/
+*.swp
