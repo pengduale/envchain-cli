@@ -66,3 +66,14 @@ def _compute_diff(old: Dict[str, str], new: Dict[str, str]) -> List[DiffEntry]:
         else:
             entries.append(DiffEntry(key, "unchanged", old[key], new[key]))
     return entries
+
+
+def filter_diff(entries: List[DiffEntry], statuses: List[str]) -> List[DiffEntry]:
+    """Return only diff entries whose status is in the given list.
+
+    Example::
+
+        changed_only = filter_diff(entries, ["added", "removed", "changed"])
+    """
+    allowed = set(statuses)
+    return [e for e in entries if e.status in allowed]
