@@ -17,6 +17,10 @@ def register_clone_commands(cli, get_store):
         """Clone SOURCE profile into DEST profile."""
         store = get_store(ctx)
         passphrase = ctx.obj["passphrase"]
+
+        if source == dest:
+            raise click.UsageError("SOURCE and DEST profiles must be different.")
+
         key_filter = list(keys) if keys else None
         results = clone_profile(
             store, passphrase, source, dest,
