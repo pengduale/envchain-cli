@@ -72,3 +72,13 @@ def test_merge_summary_counts(store):
     assert s["copied"] == 1
     assert s["skipped"] == 1
     assert s["overwritten"] == 0
+
+
+def test_merge_does_not_copy_to_source_profile(store):
+    """Merging a profile into itself should skip all keys since they already exist."""
+    _set(store, "dev", "API_KEY", "dev-key")
+    _set(store, "dev", "SECRET", "dev-secret")
+    results = merge_profiles(store, ["dev"], "dev", PASS, overwrite=False)
+    assert all(r.status == "skipped" for r in results)
+    assert _get(store, "dev", "API_KEY") == "dev-key"
+    assert _get(store, "dev", "SECRET") == "dev-secret"
