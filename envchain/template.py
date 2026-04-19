@@ -44,3 +44,15 @@ def render_file(
 def list_placeholders(template: str) -> list[str]:
     """Return unique placeholder names found in a template string."""
     return list(dict.fromkeys(m.group(1) for m in _PLACEHOLDER.finditer(template)))
+
+
+def check_template(template: str, store_path: Path, passphrase: str) -> list[str]:
+    """Return a list of placeholder names that are missing from the store.
+
+    Useful for validating a template before rendering, without raising an error.
+    """
+    missing = []
+    for key in list_placeholders(template):
+        if get_variable(store_path, passphrase, key) is None:
+            missing.append(key)
+    return missing
