@@ -16,7 +16,10 @@ def _load_archive(store_path: Path) -> dict:
     p = _archive_path(store_path)
     if not p.exists():
         return {}
-    return json.loads(p.read_text())
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Archive file is corrupt: {p}") from exc
 
 
 def _save_archive(store_path: Path, data: dict) -> None:
