@@ -63,3 +63,18 @@ def test_roundtrip_dotenv():
     content = export_to_dotenv(original)
     parsed = parse_dotenv(content)
     assert parsed == original
+
+
+def test_parse_dotenv_empty_value():
+    """An empty value (KEY=) should parse to an empty string."""
+    content = "EMPTY=\nALSO_EMPTY=\"\"\n"
+    result = parse_dotenv(content)
+    assert result["EMPTY"] == ""
+    assert result["ALSO_EMPTY"] == ""
+
+
+def test_parse_dotenv_value_with_equals_sign():
+    """Values that contain '=' should be preserved correctly."""
+    content = "URL=http://example.com?a=1&b=2\n"
+    result = parse_dotenv(content)
+    assert result["URL"] == "http://example.com?a=1&b=2"
