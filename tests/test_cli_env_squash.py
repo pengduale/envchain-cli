@@ -61,3 +61,12 @@ def test_squash_overwrite_flag(runner, cli, store_path):
     result = invoke(runner, cli, ["squash", "run", "dev", "--dest", "merged", "--overwrite"])
     assert result.exit_code == 0
     assert get_profile_variable(store_path, PASS, "merged", "KEY1") == "updated"
+
+
+def test_squash_same_source_and_dest(runner, cli, store_path):
+    """Squashing a profile into itself should be a no-op or report an error."""
+    set_profile_variable(store_path, PASS, "dev", "KEY1", "v1")
+    result = invoke(runner, cli, ["squash", "run", "dev", "--dest", "dev"])
+    assert result.exit_code != 0 or "skipped" in result.output or "wrote" in result.output
+    # The original value must remain intact regardless of behaviour.
+    assert get_profile_variable(store_path, PASS, "dev", "KEY1") == "v1"
