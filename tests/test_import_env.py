@@ -84,3 +84,14 @@ def test_import_values_readable(store):
         import_from_env(store, passphrase, keys=["MY_APP_SECRET"])
     val = get_variable(store, passphrase, "MY_APP_SECRET")
     assert val == "abc123"
+
+
+def test_import_returns_original_and_stored_name(store):
+    """Each entry in the returned list should be a (original_name, stored_name) tuple."""
+    passphrase = "testpass"
+    with patch.dict(os.environ, FAKE_ENV, clear=True):
+        imported = import_from_env(store, passphrase, keys=["MY_APP_SECRET"])
+    assert len(imported) == 1
+    orig, stored = imported[0]
+    assert orig == "MY_APP_SECRET"
+    assert stored == "MY_APP_SECRET"
