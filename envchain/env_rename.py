@@ -19,31 +19,44 @@ class RenameResult:
         return f"RenameResult({tag} {self.old_key} -> {self.new_key}: {status})"
 
 
+def _get_variable(store_path, profile, key, passphrase):
+    """Fetch a variable from the appropriate scope (profile or default)."""
+    if profile:
+        return get_profile_variable(store_path, profile, key, passphrase)
+    return get_variable(store_path, key, passphrase)
+
+
+def _set_variable(store_path, profile, key, value, passphrase):
+    """Set a variable in the appropriate scope (profile or default)."""
+    if profile:
+        set_profile_variable(store_path, profile, key, value, passphrase)
+    else:
+        set_variable(store_path, key, value, passphrase)
+
+
+def _delete_variable(store_path, profile, key):
+    """Delete a variable from the appropriate scope (profile or default)."""
+    if profile:
+        delete_profile_variable(store_path, profile, key)
+    else:
+        delete_variable(store_path, key)
+
+
 def rename_variable(store_path, old_key: str, new_key: str, passphrase: str,
                     profile: Optional[str] = None, overwrite: bool = False) -> RenameResult:
     """Rename a single variable, optionally in a named profile."""
-    if profile:
-        value = get_profile_variable(store_path, profile, old_key, passphrase)
-    else:
-        value = get_variable(store_path, old_key, passphrase)
+    value = _get_variable(store_path, profile, old_key, passphrase)
 
     if value is None:
         return RenameResult(old_key, new_key, profile, False, "source key not found")
 
     if not overwrite:
-        if profile:
-            existing = get_profile_variable(store_path, profile, new_key, passphrase)
-        else:
-            existing = get_variable(store_path, new_key, passphrase)
+        existing = _get_variable(store_path, profile, new_key, passphrase)
         if existing is not None:
             return RenameResult(old_key, new_key, profile, False, "destination key exists")
 
-    if profile:
-        set_profile_variable(store_path, profile, new_key, value, passphrase)
-        delete_profile_variable(store_path, profile, old_key)
-    else:
-        set_variable(store_path, new_key, value, passphrase)
-        delete_variable(store_path, old_key)
+    _set_variable(store_path, profile, new_key, value, passphrase)
+    _delete_variable(store_path, profile, old_key)
 
     return RenameResult(old_key, new_key, profile, True)
 
