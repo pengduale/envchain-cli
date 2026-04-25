@@ -86,3 +86,14 @@ def test_import_nonexistent_file(runner, store_path):
     """Importing a file that does not exist should fail with a non-zero exit code."""
     result = invoke(runner, store_path, "import", "/nonexistent/path/import.env")
     assert result.exit_code != 0
+
+
+def test_import_multiple_vars(runner, store_path, tmp_path):
+    """Importing a file with multiple variables should store all of them."""
+    env_file = tmp_path / "multi.env"
+    env_file.write_text("FIRST=one\nSECOND=two\nTHIRD=three\n")
+    result = invoke(runner, store_path, "import", str(env_file))
+    assert result.exit_code == 0
+    for var, value in (("FIRST", "one"), ("SECOND", "two"), ("THIRD", "three")):
+        get_result = invoke(runner, store_path, "get", var)
+        assert value in get_result.output, f"Expected {value!r} in output for {var}"
