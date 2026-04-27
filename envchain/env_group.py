@@ -87,3 +87,21 @@ def remove_key_from_group(store_dir: str, group: str, key: str) -> GroupResult:
     data[group] = keys
     _save_groups(store_dir, data)
     return GroupResult(group=group, keys=keys)
+
+
+def rename_group(store_dir: str, old_name: str, new_name: str) -> GroupResult:
+    """Rename an existing group.
+
+    Returns a failed GroupResult if the old group does not exist or if the
+    new name is empty or already taken.
+    """
+    if not new_name:
+        return GroupResult(group=old_name, success=False, message="New group name must not be empty.")
+    data = _load_groups(store_dir)
+    if old_name not in data:
+        return GroupResult(group=old_name, success=False, message=f"Group {old_name!r} does not exist.")
+    if new_name in data:
+        return GroupResult(group=new_name, success=False, message=f"Group {new_name!r} already exists.")
+    data[new_name] = data.pop(old_name)
+    _save_groups(store_dir, data)
+    return GroupResult(group=new_name, keys=data[new_name])
