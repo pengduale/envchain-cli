@@ -85,9 +85,13 @@ def list_checkpoints(store_path: Path) -> list[dict]:
 
 
 def delete_checkpoint(store_path: Path, name: str) -> bool:
-    """Delete a named checkpoint. Returns True if deleted."""
+    """Delete a named checkpoint file.
+
+    Returns True if the checkpoint was found and deleted, False if it did not exist.
+    Raises OSError if the file exists but cannot be removed.
+    """
     cp = _checkpoint_file(store_path, name)
-    if cp.exists():
-        cp.unlink()
-        return True
-    return False
+    if not cp.exists():
+        return False
+    cp.unlink()
+    return True
