@@ -10,6 +10,14 @@ from envchain.env_expiry_policy import (
 )
 
 
+def _format_policy_line(key: str, policy: dict) -> str:
+    """Format a single expiry policy as a human-readable string."""
+    return (
+        f"{key}: max_age={policy['max_age_days']}d  "
+        f"warn={policy['warn_before_days']}d  action={policy['action']}"
+    )
+
+
 def register_expiry_policy_commands(cli: click.Group, get_store) -> None:
     @cli.group("expiry-policy")
     def cmd_expiry_policy():
@@ -72,7 +80,4 @@ def register_expiry_policy_commands(cli: click.Group, get_store) -> None:
             click.echo("No expiry policies defined.")
             return
         for key, policy in sorted(policies.items()):
-            click.echo(
-                f"{key}: max_age={policy['max_age_days']}d  "
-                f"warn={policy['warn_before_days']}d  action={policy['action']}"
-            )
+            click.echo(_format_policy_line(key, policy))
