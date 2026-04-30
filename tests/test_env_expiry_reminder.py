@@ -92,3 +92,21 @@ def test_summary_string(store: Path):
 
 def test_summary_empty():
     assert summary([]) == "0 overdue, 0 expiring soon"
+
+
+def test_summary_only_overdue():
+    """summary() correctly reports when all entries are overdue and none are upcoming."""
+    reminders = [
+        ReminderEntry("X", datetime.datetime.utcnow(), -3.0, overdue=True),
+        ReminderEntry("Y", datetime.datetime.utcnow(), -1.0, overdue=True),
+    ]
+    assert summary(reminders) == "2 overdue, 0 expiring soon"
+
+
+def test_summary_only_expiring_soon():
+    """summary() correctly reports when all entries are upcoming and none are overdue."""
+    reminders = [
+        ReminderEntry("M", datetime.datetime.utcnow(), 1.0, overdue=False),
+        ReminderEntry("N", datetime.datetime.utcnow(), 4.0, overdue=False),
+    ]
+    assert summary(reminders) == "0 overdue, 2 expiring soon"
